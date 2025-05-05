@@ -1,0 +1,44 @@
+.App {
+  text-align: center;
+}
+
+.App-header {
+  background-color: #282c34;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+/* Material-UI overrides */
+.MuiPaper-root {
+  margin-bottom: 20px;
+}
+
+.MuiButton-root {
+  margin: 8px;
+}
+
+/* File upload styling */
+input[type="file"] {
+  display: none;
+}
+
+/* Response styling */
+.response-container {
+  margin-top: 20px;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+/* Loading indicator */
+.loading-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin: 20px 0;
+} 

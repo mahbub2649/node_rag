@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Amplify } from 'aws-amplify';
 import { withAuthenticator } from '@aws-amplify/ui-react';
 import '@aws-amplify/ui-react/styles.css';
@@ -14,6 +14,7 @@ import {
   CircularProgress,
 } from '@mui/material';
 import axios from 'axios';
+import './App.css';
 
 // Configure Amplify
 Amplify.configure({

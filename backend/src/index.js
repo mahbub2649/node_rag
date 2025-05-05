@@ -73,8 +73,8 @@ app.post('/api/query', async (req, res) => {
 
     // Prepare the prompt for Bedrock
     const prompt = {
-      prompt: `Based on the knowledge base, answer the following question: ${query}`,
-      max_tokens: 500,
+      prompt: `\n\nHuman:Based on the knowledge base, answer the following question: ${query}\n\nAssistant:`,
+      max_tokens_to_sample: 500,
       temperature: 0.7,
     };
 
