@@ -1,29 +1,6 @@
 import React, { useState } from 'react';
-import { Amplify } from 'aws-amplify';
-import { withAuthenticator } from '@aws-amplify/ui-react';
-import '@aws-amplify/ui-react/styles.css';
-import {
-  AppBar,
-  Toolbar,
-  Typography,
-  Container,
-  Box,
-  Paper,
-  TextField,
-  Button,
-  CircularProgress,
-} from '@mui/material';
 import axios from 'axios';
-import './App.css';
-
-// Configure Amplify
-Amplify.configure({
-  Auth: {
-    region: process.env.REACT_APP_AWS_REGION,
-    userPoolId: process.env.REACT_APP_COGNITO_USER_POOL_ID,
-    userPoolWebClientId: process.env.REACT_APP_COGNITO_CLIENT_ID,
-  },
-});
+import { DocumentPlusIcon, CommandLineIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
 
 function App({ signOut, user }) {
   const [query, setQuery] = useState('');
@@ -62,6 +39,7 @@ function App({ signOut, user }) {
         },
       });
       alert('Document uploaded successfully');
+      setFile(null);
     } catch (error) {
       console.error('Error uploading document:', error);
       alert('Error uploading document');
@@ -69,85 +47,96 @@ function App({ signOut, user }) {
   };
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static">
-        <Toolbar>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            RAG System
-          </Typography>
-          <Button color="inherit" onClick={signOut}>
+    <div className="min-h-screen bg-gray-900 text-gray-100">
+      {/* Header */}
+      <header className="border-b border-cyan-500/20 backdrop-blur-sm bg-gray-900/50 sticky top-0 z-50">
+        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
+          <h1 className="sci-fi-heading text-2xl">RAG System</h1>
+          <button
+            onClick={signOut}
+            className="sci-fi-button"
+          >
             Sign Out
-          </Button>
-        </Toolbar>
-      </AppBar>
+          </button>
+        </div>
+      </header>
 
-      <Container maxWidth="md" sx={{ mt: 4 }}>
-        <Paper sx={{ p: 3, mb: 3 }}>
-          <Typography variant="h6" gutterBottom>
+      <main className="container mx-auto px-4 py-8 space-y-8">
+        {/* Upload Section */}
+        <section className="sci-fi-card p-6">
+          <h2 className="sci-fi-heading text-xl mb-4 flex items-center gap-2">
+            <DocumentPlusIcon className="w-6 h-6" />
             Upload Document
-          </Typography>
-          <input
-            accept=".pdf,.doc,.docx,.txt"
-            style={{ display: 'none' }}
-            id="raised-button-file"
-            type="file"
-            onChange={handleFileUpload}
-          />
-          <label htmlFor="raised-button-file">
-            <Button variant="contained" component="span">
+          </h2>
+          <div className="flex items-center gap-4">
+            <label className="sci-fi-button cursor-pointer">
+              <input
+                type="file"
+                className="hidden"
+                onChange={handleFileUpload}
+                accept=".pdf,.doc,.docx,.txt"
+              />
               Choose File
-            </Button>
-          </label>
-          {file && (
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={uploadDocument}
-              sx={{ ml: 2 }}
-            >
-              Upload
-            </Button>
-          )}
-        </Paper>
+            </label>
+            {file && (
+              <>
+                <span className="text-gray-400">{file.name}</span>
+                <button
+                  onClick={uploadDocument}
+                  className="sci-fi-button"
+                >
+                  Upload
+                </button>
+              </>
+            )}
+          </div>
+        </section>
 
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" gutterBottom>
+        {/* Query Section */}
+        <section className="sci-fi-card p-6">
+          <h2 className="sci-fi-heading text-xl mb-4 flex items-center gap-2">
+            <CommandLineIcon className="w-6 h-6" />
             Query Knowledge Base
-          </Typography>
-          <form onSubmit={handleQuery}>
-            <TextField
-              fullWidth
-              label="Enter your query"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              margin="normal"
-              variant="outlined"
-            />
-            <Button
+          </h2>
+          <form onSubmit={handleQuery} className="space-y-4">
+            <div>
+              <input
+                type="text"
+                className="sci-fi-input w-full"
+                placeholder="Enter your query..."
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
+            <button
               type="submit"
-              variant="contained"
-              color="primary"
+              className="sci-fi-button w-full flex justify-center items-center gap-2"
               disabled={loading}
-              sx={{ mt: 2 }}
             >
-              {loading ? <CircularProgress size={24} /> : 'Submit Query'}
-            </Button>
+              {loading ? (
+                <>
+                  <ArrowPathIcon className="w-5 h-5 animate-spin" />
+                  Processing...
+                </>
+              ) : (
+                'Submit Query'
+              )}
+            </button>
           </form>
+        </section>
 
-          {response && (
-            <Box sx={{ mt: 3 }}>
-              <Typography variant="h6" gutterBottom>
-                Response:
-              </Typography>
-              <Paper sx={{ p: 2, bgcolor: 'grey.100' }}>
-                <Typography>{response}</Typography>
-              </Paper>
-            </Box>
-          )}
-        </Paper>
-      </Container>
-    </Box>
+        {/* Response Section */}
+        {response && (
+          <section className="sci-fi-card p-6">
+            <h2 className="sci-fi-heading text-xl mb-4">Response</h2>
+            <div className="bg-gray-800/30 rounded-lg p-4 font-mono text-sm">
+              <pre className="whitespace-pre-wrap">{response}</pre>
+            </div>
+          </section>
+        )}
+      </main>
+    </div>
   );
 }
 
-export default withAuthenticator(App); 
+export default App; 
