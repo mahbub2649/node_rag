@@ -63,7 +63,55 @@ app.post('/api/documents/upload', upload.single('file'), async (req, res) => {
   }
 });
 
-// Query endpoint
+async function queryKnowledgeBase(query) {
+  const { BedrockAgentRuntimeClient, RetrieveCommand } = require('@aws-sdk/client-bedrock-agent-runtime');
+  const bedrockAgentClient = new BedrockAgentRuntimeClient({ region: process.env.AWS_REGION });
+
+  console.log('Querying Knowledge Base with:', {
+    knowledgeBaseId: process.env.BEDROCK_KNOWLEDGE_BASE_ID,
+    query: query
+  });
+
+  try {
+    const command = new RetrieveCommand({
+      knowledgeBaseId: process.env.BEDROCK_KNOWLEDGE_BASE_ID,
+      retrievalQuery: {
+        text: query,
+        maxResults: 5  // Retrieve up to 5 relevant passages
+      }
+    });
+
+    const response = await bedrockAgentClient.send(command);
+    
+    console.log('Raw Knowledge Base Response:', JSON.stringify(response, null, 2));
+
+    if (!response.retrievalResults || response.retrievalResults.length === 0) {
+      console.warn('No results found in Knowledge Base');
+      return 'No relevant information found in the knowledge base.';
+    }
+
+    // Extract and format the context from results
+    const formattedResults = response.retrievalResults.map((result, index) => {
+      // Extract text from the nested content object
+      const text = result.content?.text || 'No content available';
+      return `[Source ${index + 1}]: ${text}`;
+    }).join('\n\n');
+
+    console.log('Formatted Knowledge Base Results:', formattedResults);
+    return formattedResults;
+  } catch (error) {
+    console.error('Error querying Knowledge Base:', error);
+    if (error.message.includes('not authorized')) {
+      throw new Error('Not authorized to access Knowledge Base. Check IAM permissions.');
+    }
+    if (error.message.includes('NotFoundException')) {
+      throw new Error('Knowledge Base not found. Check if ID is correct and Knowledge Base exists.');
+    }
+    throw error;
+  }
+}
+
+// Modify the query endpoint to handle Knowledge Base errors
 app.post('/api/query', async (req, res) => {
   try {
     const { query } = req.body;
@@ -71,9 +119,30 @@ app.post('/api/query', async (req, res) => {
       return res.status(400).json({ error: 'Query is required' });
     }
 
-    // Prepare the prompt for Bedrock
+    console.log('Processing query:', query);
+
+    // Check if Knowledge Base ID is configured
+    if (!process.env.BEDROCK_KNOWLEDGE_BASE_ID) {
+      return res.status(500).json({ 
+        error: 'Knowledge Base ID not configured. Check BEDROCK_KNOWLEDGE_BASE_ID in .env file.' 
+      });
+    }
+
+    // Retrieve relevant context from the Knowledge Base
+    let context;
+    try {
+      context = await queryKnowledgeBase(query);
+    } catch (kbError) {
+      console.error('Knowledge Base Error:', kbError);
+      return res.status(500).json({ 
+        error: `Knowledge Base Error: ${kbError.message}`,
+        details: kbError.stack
+      });
+    }
+
+    // Prepare the prompt for Bedrock, including the retrieved context
     const prompt = {
-      prompt: `\n\nHuman:Based on the knowledge base, answer the following question: ${query}\n\nAssistant:`,
+      prompt: `\n\nHuman: Based on the following context from the knowledge base:\n${context}\n\nNow, answer the following question: ${query}\n\nAssistant:`,
       max_tokens_to_sample: 500,
       temperature: 0.7,
     };
@@ -88,11 +157,15 @@ app.post('/api/query', async (req, res) => {
 
     res.json({ 
       message: responseBody.completion,
-      sources: responseBody.sources || []
+      sources: responseBody.sources || [],
+      context: context  // Include the retrieved context in the response
     });
   } catch (error) {
     console.error('Error processing query:', error);
-    res.status(500).json({ error: 'Failed to process query' });
+    res.status(500).json({ 
+      error: 'Failed to process query',
+      details: error.message 
+    });
   }
 });
 
